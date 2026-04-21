@@ -1,0 +1,24 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.venv/
+venv/
+ENV/
+env/
+
+# API Keys and Secrets
+.env
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# SpaCy models (best to download during build, not store in Git)
+*/en_core_web_sm/
+
+# IDEs
+.vscode/
+.idea/
