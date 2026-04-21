@@ -7,7 +7,7 @@ export default defineConfig(({ mode }) => {
   return {
     root: './', // Assumes this file is INSIDE the frontend folder
     build: {
-      outDir: '../dist', // Keeps the build folder outside for cleaner deployment
+      outDir: 'dist', // Keeps the build folder inside the frontend directory for Vercel
       emptyOutDir: true,
     },
     server: {
