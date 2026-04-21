@@ -15,7 +15,7 @@ from backend.consolidator import consolidate
 
 load_dotenv()
 
-app = Flask(__name__, static_folder="../frontend", static_url_path="")
+app = Flask(__name__, static_folder="../frontend/dist", static_url_path="")
 # Configure CORS dynamically
 frontend_url = os.getenv("FRONTEND_URL", "https://rl-based-dual-phase-memory-consolidation-system-oszu7eilt.vercel.app/")
 allowed_origins = [frontend_url, "http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000"]

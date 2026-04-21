@@ -374,13 +374,9 @@
 <script type="module">
   /**
    * API Configuration
-   * VITE_API_URL is injected during the Vite build process.
-   * Falls back to http://localhost:10000 for local development.
+   * Since the frontend is served by the backend, we use relative paths.
    */
-  const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:10000";
-
-  // Ensure no trailing slash for consistency
-  const API = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
+  const API = ""; 
 
   document.getElementById("userInput").addEventListener("keydown", e => {
     if (e.key === "Enter") sendMessage();
