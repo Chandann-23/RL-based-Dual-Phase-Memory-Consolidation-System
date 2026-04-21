@@ -18,7 +18,7 @@ load_dotenv()
 app = Flask(__name__, static_folder="../frontend", static_url_path="")
 # Configure CORS based on environment variable
 frontend_url = os.getenv("FRONTEND_URL", "*")
-CORS(app, resources={r"/*": {"origins": frontend_url}})
+CORS(app, resources={r"/*": {"origins": "https://rl-based-dual-phase-memory-consolidation-system-oszu7eilt.vercel.app/"}})
 
 # Initialize Groq Client
 # Note: Never hardcode your API key. Use environment variables.
