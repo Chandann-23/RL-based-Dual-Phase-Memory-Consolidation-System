@@ -6,3 +6,4 @@ spacy
 requests
 waitress
 python-dotenv
+groq

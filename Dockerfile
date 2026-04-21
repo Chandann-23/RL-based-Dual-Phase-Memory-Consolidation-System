@@ -24,8 +24,7 @@ COPY . .
 # Set environment variables
 ENV PORT=5000
 ENV FLASK_DEBUG=false
-ENV OLLAMA_URL=http://localhost:11434
-ENV OLLAMA_MODEL=llama3.2
+ENV GROQ_API_KEY=your_api_key_here
 ENV FRONTEND_URL=*
 
 # Make port 5000 available to the world outside this container

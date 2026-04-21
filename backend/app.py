@@ -4,6 +4,7 @@ import requests as http_requests
 import numpy as np
 import os
 from dotenv import load_dotenv
+from groq import Groq, APIStatusError
 
 from backend.nlp_processor import extract_concepts
 from backend.memory_store import MemoryStore
@@ -19,8 +20,9 @@ app = Flask(__name__, static_folder="../frontend", static_url_path="")
 frontend_url = os.getenv("FRONTEND_URL", "*")
 CORS(app, resources={r"/*": {"origins": frontend_url}})
 
-OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2")
+# Initialize Groq Client
+client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+GROQ_MODEL = "llama-3.2-3b-preview"
 
 memory = MemoryStore()
 agent = QLearningAgent()
@@ -32,7 +34,7 @@ CONSOLIDATE_EVERY = 3
 
 
 def generate_response(user_input: str, relevant: list, history: list) -> str:
-    """LLM-powered response using Ollama + LLaMA 3.2 3B with memory context and history."""
+    """LLM-powered response using Groq Cloud with memory context and history."""
 
     if relevant:
         memory_context = "\n".join(
@@ -45,32 +47,33 @@ def generate_response(user_input: str, relevant: list, history: list) -> str:
     for h in history[-MAX_HISTORY:]:
         history_str += f"U: {h['user'][:80]}\nA: {h['bot'][:80]}\n"
 
-    prompt = f"""You are a memory-aware assistant. Answer using ONLY the facts below. Be concise.
+    system_prompt = f"""You are a memory-aware assistant. Answer using ONLY the facts below. Be concise.
 
 Memory: {memory_context}
 History:
-{history_str}
-User: {user_input}
-Answer in 1-2 sentences only:"""
+{history_str}"""
 
     try:
-        res = http_requests.post(
-            f"{OLLAMA_URL}/api/generate",
-            json={
-                "model": OLLAMA_MODEL,
-                "prompt": prompt,
-                "stream": False,
-                "options": {
-                    "num_predict": 50,
-                    "temperature": 0.2,
-                    "top_p": 0.8
-                }
-            },
-            timeout=30
+        completion = client.chat.completions.create(
+            model=GROQ_MODEL,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_input}
+            ],
+            temperature=0.2,
+            max_tokens=100,
+            top_p=0.8,
+            stream=False
         )
-        return res.json().get("response", "").strip()
+        return completion.choices[0].message.content.strip()
 
+    except APIStatusError as e:
+        print(f"Groq API Error: {e.status_code} - {e.message}")
+        if history:
+            return f"Based on our conversation — {history[-1]['bot']}"
+        return "I'm having trouble connecting to my brain right now. Please try again in a moment."
     except Exception as e:
+        print(f"Unexpected error: {e}")
         if history:
             return f"Based on our conversation — {history[-1]['bot']}"
         if relevant:

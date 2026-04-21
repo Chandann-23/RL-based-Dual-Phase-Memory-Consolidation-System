@@ -9,9 +9,7 @@ services:
         value: 5000
       - key: FLASK_DEBUG
         value: false
-      - key: OLLAMA_URL
-        value: http://your-ollama-host:11434
-      - key: OLLAMA_MODEL
-        value: llama3.2
+      - key: GROQ_API_KEY
+        sync: false
       - key: FRONTEND_URL
         value: "*"
