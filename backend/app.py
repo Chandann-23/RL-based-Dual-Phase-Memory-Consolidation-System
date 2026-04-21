@@ -21,6 +21,7 @@ frontend_url = os.getenv("FRONTEND_URL", "*")
 CORS(app, resources={r"/*": {"origins": frontend_url}})
 
 # Initialize Groq Client
+# Note: Never hardcode your API key. Use environment variables.
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 GROQ_MODEL = "llama-3.2-3b-preview"
 
