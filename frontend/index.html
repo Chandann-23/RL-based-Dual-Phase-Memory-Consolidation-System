@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RL Memory System</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #12121a;
+      --card: #1a1a26;
+      --border: #2a2a40;
+      --accent: #6c63ff;
+      --accent2: #00e5ff;
+      --warn: #ff6b6b;
+      --ok: #69ff84;
+      --mid: #ffd166;
+      --text: #e8e8f0;
+      --muted: #6b6b8a;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Syne', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      grid-template-rows: 56px 1fr;
+      height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      grid-column: 1 / -1;
+      padding: 0 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface);
+      height: 56px;
+      flex-shrink: 0;
+    }
+
+    header h1 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    header h1 span { color: var(--accent); }
+
+    .agent-stats {
+      display: flex;
+      gap: 16px;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+
+    .agent-stats b { color: var(--accent2); }
+
+    /* ── Chat Panel ── */
+    .chat-panel {
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--border);
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-height: 0;
+    }
+
+    .msg {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-width: 88%;
+    }
+
+    .msg.user { align-self: flex-end; align-items: flex-end; }
+    .msg.bot  { align-self: flex-start; }
+
+    .bubble {
+      padding: 10px 14px;
+      border-radius: 14px;
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+
+    .msg.user .bubble {
+      background: var(--accent);
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+
+    .msg.bot .bubble {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+    }
+
+    .show-details-btn {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      padding: 3px 10px;
+      border: 1px solid var(--accent);
+      border-radius: 20px;
+      background: transparent;
+      color: var(--accent);
+      cursor: pointer;
+      width: fit-content;
+      transition: all 0.2s;
+    }
+
+    .show-details-btn:hover {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .memory-breakdown {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .memory-breakdown.open { display: flex; }
+
+    .breakdown-section h4 {
+      color: var(--muted);
+      text-transform: uppercase;
+      font-size: 0.6rem;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+
+    .concept-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 0;
+      border-bottom: 1px solid var(--border);
+      gap: 6px;
+    }
+
+    .concept-row:last-child { border-bottom: none; }
+    .concept-name { color: var(--accent2); font-weight: 600; min-width: 60px; }
+
+    .importance-bar-wrap {
+      width: 60px;
+      height: 5px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .importance-bar {
+      height: 100%;
+      border-radius: 3px;
+    }
+
+    .action-badge {
+      display: inline-block;
+      padding: 1px 7px;
+      border-radius: 20px;
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      flex-shrink: 0;
+    }
+
+    .badge-STORE     { background: #1a3a2a; color: var(--ok);  border: 1px solid var(--ok); }
+    .badge-REINFORCE { background: #3a2e00; color: var(--mid); border: 1px solid var(--mid); }
+    .badge-REMOVE    { background: #3a1a1a; color: var(--warn);border: 1px solid var(--warn); }
+
+    .reasons-list { list-style: none; display: flex; flex-direction: column; gap: 3px; }
+    .reasons-list li::before { content: "→ "; color: var(--accent); }
+
+    /* ── Input ── */
+    .input-area {
+      padding: 12px 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 10px;
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+
+    .input-area input {
+      flex: 1;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 0.88rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .input-area input:focus { border-color: var(--accent); }
+
+    .input-area button {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 20px;
+      font-family: var(--sans);
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      flex-shrink: 0;
+    }
+
+    .input-area button:hover { opacity: 0.85; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      background: var(--surface);
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .sidebar-top {
+      flex-shrink: 0;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-top h3 {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .persistent-scroll {
+      max-height: 160px;
+      overflow-y: auto;
+    }
+
+    .mem-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+      font-family: var(--mono);
+      font-size: 0.72rem;
+    }
+
+    .mem-item:last-child { border: none; }
+    .mem-key { color: var(--accent2); }
+    .mem-val { color: var(--muted); }
+
+    .sidebar-log {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .sidebar-log h3 {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--muted);
+      padding: 14px 16px 8px;
+      flex-shrink: 0;
+    }
+
+    .log-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 16px 16px;
+    }
+
+    .log-entry {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      padding: 4px 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .log-entry:last-child { border: none; }
+
+    .empty-state {
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-family: var(--mono);
+      padding: 6px 0;
+    }
+
+    ::-webkit-scrollbar { width: 3px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🧠 RL <span>Memory</span> System</h1>
+  <div class="agent-stats" id="agentStats">
+    <span>Steps: <b>0</b></span>
+    <span>ε: <b>0.300</b></span>
+    <span>Avg Reward: <b>—</b></span>
+  </div>
+</header>
+
+<!-- Chat Panel -->
+<div class="chat-panel">
+  <div class="messages" id="messages">
+    <div class="msg bot">
+      <div class="bubble">Hey! Talk to me — I'll remember what matters using reinforcement learning. 🧠</div>
+    </div>
+  </div>
+  <div class="input-area">
+    <input type="text" id="userInput" placeholder="Type something..." />
+    <button onclick="sendMessage()">Send</button>
+  </div>
+</div>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <div class="sidebar-top">
+    <h3>📌 Persistent Memory</h3>
+    <div class="persistent-scroll">
+      <div id="persistentMemory"><p class="empty-state">Nothing stored yet.</p></div>
+    </div>
+  </div>
+  <div class="sidebar-log">
+    <h3>⚡ Consolidation Log</h3>
+    <div class="log-scroll" id="consolidationLog">
+      <p class="empty-state">Runs every 3 interactions.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  /**
+   * API Configuration
+   * For production deployment:
+   * Replace the URL below with your actual Render backend URL.
+   * Example: "https://rl-memory-backend.onrender.com"
+   */
+  const API_BASE_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+    ? "http://localhost:5000"
+    : "https://your-render-app.onrender.com"; 
+
+  const API = API_BASE_URL;
+
+  document.getElementById("userInput").addEventListener("keydown", e => {
+    if (e.key === "Enter") sendMessage();
+  });
+
+  async function sendMessage() {
+    const input = document.getElementById("userInput");
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = "";
+
+    appendMessage("user", text);
+
+    try {
+      const res = await fetch(`${API}/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text }),
+      });
+      const data = await res.json();
+      appendBotMessage(data.response, data.memory_details);
+      updateAgentStats(data.agent_stats);
+      updatePersistentMemory(data.persistent_memory);
+      updateConsolidationLog(data.consolidation_log);
+    } catch (err) {
+      appendMessage("bot", "⚠️ Could not reach backend. Make sure Flask is running.");
+    }
+  }
+
+  function appendMessage(role, text) {
+    const msgs = document.getElementById("messages");
+    const div = document.createElement("div");
+    div.className = `msg ${role}`;
+    div.innerHTML = `<div class="bubble">${text}</div>`;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function appendBotMessage(text, memDetails) {
+    const msgs = document.getElementById("messages");
+    const msgDiv = document.createElement("div");
+    msgDiv.className = "msg bot";
+
+    let breakdownHTML = "";
+    if (memDetails && memDetails.length) {
+      const conceptsStr = memDetails.map(m => m.concept).join(", ");
+      const conceptRows = memDetails.map(m => {
+        const impPct = Math.round(m.importance * 100);
+        const barColor = impPct >= 65 ? "var(--ok)" : impPct >= 35 ? "var(--mid)" : "var(--warn)";
+        return `
+          <div class="concept-row">
+            <span class="concept-name">${m.concept}</span>
+            <span style="color:var(--muted)">${m.frequency}</span>
+            <div class="importance-bar-wrap">
+              <div class="importance-bar" style="width:${impPct}%;background:${barColor}"></div>
+            </div>
+            <span style="font-weight:600;font-size:0.68rem">${m.importance}</span>
+            <span class="action-badge badge-${m.action}">${m.action}</span>
+          </div>`;
+      }).join("");
+
+      const reasonsHTML = (memDetails[0]?.reasons || []).map(r => `<li>${r}</li>`).join("");
+
+      breakdownHTML = `
+        <div class="memory-breakdown">
+          <div class="breakdown-section">
+            <h4>Detected Concepts</h4>
+            <p style="color:var(--accent2);font-weight:600;font-size:0.72rem">${conceptsStr}</p>
+          </div>
+          <div class="breakdown-section">
+            <h4>Importance + RL Decision</h4>
+            ${conceptRows}
+          </div>
+          <div class="breakdown-section">
+            <h4>Reasons (top concept)</h4>
+            <ul class="reasons-list">${reasonsHTML}</ul>
+          </div>
+        </div>`;
+    }
+
+    msgDiv.innerHTML = `
+      <div class="bubble">${text}</div>
+      ${memDetails?.length ? `<button class="show-details-btn" onclick="toggleBreakdown(this)">▾ Show Memory Details</button>` : ""}
+      ${breakdownHTML}
+    `;
+
+    msgs.appendChild(msgDiv);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function toggleBreakdown(btn) {
+    const bd = btn.nextElementSibling;
+    if (!bd) return;
+    const isOpen = bd.classList.toggle("open");
+    btn.textContent = isOpen ? "▴ Hide Memory Details" : "▾ Show Memory Details";
+  }
+
+  function updateAgentStats(stats) {
+    if (!stats) return;
+    document.getElementById("agentStats").innerHTML = `
+      <span>Steps: <b>${stats.steps}</b></span>
+      <span>ε: <b>${stats.epsilon}</b></span>
+      <span>Avg Reward: <b>${stats.avg_reward}</b></span>
+    `;
+  }
+
+  function updatePersistentMemory(persistent) {
+    const el = document.getElementById("persistentMemory");
+    if (!persistent || persistent.length === 0) {
+      el.innerHTML = '<p class="empty-state">Nothing stored yet.</p>';
+      return;
+    }
+    el.innerHTML = persistent.map(p => `
+      <div class="mem-item">
+        <span class="mem-key">${p.concept}</span>
+        <span class="mem-val">freq ${p.frequency}</span>
+      </div>`).join("");
+  }
+
+  function updateConsolidationLog(log) {
+    const el = document.getElementById("consolidationLog");
+    if (!log || log.length === 0) return;
+    const entries = log.map(l => {
+      const color = l.action === "STORE" ? "var(--ok)" : l.action === "REINFORCE" ? "var(--mid)" : "var(--warn)";
+      return `<div class="log-entry">
+        <span style="color:${color}">●</span>
+        <span style="color:var(--accent2)">${l.concept}</span>
+        <span class="action-badge badge-${l.action}">${l.action}</span>
+        <span style="color:var(--muted)">${l.importance}</span>
+      </div>`;
+    }).join("");
+    el.innerHTML = entries + el.innerHTML;
+  }
+</script>
+
+</body>
+</html>
