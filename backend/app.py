@@ -16,9 +16,17 @@ from backend.consolidator import consolidate
 load_dotenv()
 
 app = Flask(__name__, static_folder="../frontend", static_url_path="")
-# Configure CORS based on environment variable
-frontend_url = os.getenv("FRONTEND_URL", "*")
-CORS(app, resources={r"/*": {"origins": "https://rl-based-dual-phase-memory-consolidation-system-oszu7eilt.vercel.app/"}})
+# Configure CORS dynamically
+frontend_url = os.getenv("FRONTEND_URL", "https://rl-based-dual-phase-memory-consolidation-system-oszu7eilt.vercel.app/")
+allowed_origins = [frontend_url, "http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000"]
+
+CORS(app, resources={
+    r"/*": {
+        "origins": allowed_origins,
+        "methods": ["GET", "POST", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"]
+    }
+})
 
 # Initialize Groq Client
 # Note: Never hardcode your API key. Use environment variables.
@@ -88,8 +96,10 @@ def index():
     return send_from_directory(app.static_folder, "index.html")
 
 
-@app.route("/chat", methods=["POST"])
+@app.route("/chat", methods=["POST", "OPTIONS"])
 def chat():
+    if request.method == "OPTIONS":
+        return "", 200
     global conversation_history
 
     data = request.json
