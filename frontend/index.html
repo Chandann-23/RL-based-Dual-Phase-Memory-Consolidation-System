@@ -53,14 +53,20 @@
       padding: 24px;
       border-bottom: 1px solid var(--border-glass);
       display: flex;
-      flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: space-between;
       background: var(--bg-surface);
       backdrop-filter: blur(8px);
       height: 100px;
       flex-shrink: 0;
       position: relative;
+    }
+
+    .header-title {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
     }
 
     header h2 {
@@ -103,6 +109,16 @@
       background: var(--accent-professional);
       color: var(--text-primary);
     }
+
+    .agent-stats-header {
+      display: flex;
+      gap: 16px;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--text-primary);
+    }
+
+    .agent-stats-header b { color: var(--accent-professional); }
 
     /* ── Chat Panel ── */
     .chat-panel {
@@ -325,19 +341,6 @@
       backdrop-filter: blur(10px);
     }
 
-    .agent-stats {
-      display: flex;
-      gap: 16px;
-      font-family: var(--mono);
-      font-size: 0.7rem;
-      color: var(--text-primary);
-      margin-bottom: 16px;
-      padding: 8px 0;
-      border-bottom: 1px solid var(--border-glass);
-    }
-
-    .agent-stats b { color: var(--accent-professional); }
-
     .sidebar-top h3 {
       font-size: 0.65rem;
       text-transform: uppercase;
@@ -482,10 +485,17 @@
 <body>
 
 <header>
-  <h2>RL Memory System</h2>
-  <div class="description">
-    <span>RL-Driven Dual-Phase Memory Engine</span>
-    <button class="mobile-toggle" onclick="toggleSidebar()">☰ Stats</button>
+  <div class="header-title">
+    <h2>RL Memory System</h2>
+    <div class="description">
+      <span>RL-Driven Dual-Phase Memory Engine</span>
+      <button class="mobile-toggle" onclick="toggleSidebar()">☰ Stats</button>
+    </div>
+  </div>
+  <div class="agent-stats-header" id="agentStats">
+    <span>Steps: <b>0</b></span>
+    <span>ε: <b>0.300</b></span>
+    <span>Avg Reward: <b>—</b></span>
   </div>
 </header>
 
@@ -508,11 +518,6 @@
 <!-- Sidebar -->
 <div class="sidebar">
   <div class="sidebar-top">
-    <div class="agent-stats" id="agentStats">
-      <span>Steps: <b>0</b></span>
-      <span>ε: <b>0.300</b></span>
-      <span>Avg Reward: <b>—</b></span>
-    </div>
     <h3>📌 Persistent Memory</h3>
     <div class="persistent-scroll">
       <div id="persistentMemory"><p class="empty-state">Nothing stored yet.</p></div>
