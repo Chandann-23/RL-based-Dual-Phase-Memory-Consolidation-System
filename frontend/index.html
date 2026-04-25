@@ -60,6 +60,7 @@
       backdrop-filter: blur(8px);
       height: 100px;
       flex-shrink: 0;
+      position: relative;
     }
 
     header h2 {
@@ -78,6 +79,29 @@
       -webkit-text-fill-color: transparent;
       background-clip: text;
       text-align: center;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .mobile-toggle {
+      display: none;
+      background: transparent;
+      border: 1px solid var(--accent-professional);
+      color: var(--accent-professional);
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: all 0.15s ease;
+    }
+
+    .mobile-toggle:hover {
+      background: var(--accent-professional);
+      color: var(--text-primary);
     }
 
     /* ── Chat Panel ── */
@@ -289,6 +313,7 @@
       margin: 12px 12px 12px 0;
       padding: 16px;
       color: var(--text-primary);
+      transition: transform 0.3s ease;
     }
 
     .sidebar-top {
@@ -394,13 +419,74 @@
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--border-glass); border-radius: 2px; }
     ::-webkit-scrollbar-thumb:hover { background: var(--accent-muted); }
+
+    /* ── Mobile Responsive ── */
+    @media (max-width: 768px) {
+      body {
+        grid-template-columns: 1fr;
+        grid-template-rows: 100px 1fr;
+      }
+
+      header h2 {
+        font-size: 1.4rem;
+      }
+
+      header .description {
+        font-size: 0.8rem;
+      }
+
+      .mobile-toggle {
+        display: block;
+      }
+
+      .chat-panel {
+        border-right: none;
+        margin: 12px;
+        border-radius: 12px;
+      }
+
+      .sidebar {
+        position: fixed;
+        top: 100px;
+        right: 0;
+        width: 280px;
+        height: calc(100vh - 100px);
+        margin: 0;
+        border-radius: 0;
+        border-left: 1px solid var(--border-glass);
+        transform: translateX(100%);
+        z-index: 1000;
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 100px;
+        left: 0;
+        width: 100%;
+        height: calc(100vh - 100px);
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+      }
+
+      .sidebar-overlay.show {
+        display: block;
+      }
+    }
   </style>
 </head>
 <body>
 
 <header>
   <h2>RL Memory System</h2>
-  <div class="description">RL-Driven Dual-Phase Memory Engine</div>
+  <div class="description">
+    <span>RL-Driven Dual-Phase Memory Engine</span>
+    <button class="mobile-toggle" onclick="toggleSidebar()">☰ Stats</button>
+  </div>
 </header>
 
 <!-- Chat Panel -->
@@ -415,6 +501,9 @@
     <button onclick="sendMessage()">Send</button>
   </div>
 </div>
+
+<!-- Sidebar Overlay -->
+<div class="sidebar-overlay" onclick="toggleSidebar()"></div>
 
 <!-- Sidebar -->
 <div class="sidebar">
@@ -453,6 +542,7 @@
   // Expose functions to global scope for HTML event handlers
   window.sendMessage = sendMessage;
   window.toggleBreakdown = toggleBreakdown;
+  window.toggleSidebar = toggleSidebar;
 
   async function sendMessage() {
     const input = document.getElementById("userInput");
@@ -583,6 +673,14 @@
       </div>`;
     }).join("");
     el.innerHTML = entries + el.innerHTML;
+  }
+
+  function toggleSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.querySelector('.sidebar-overlay');
+    
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('show');
   }
 </script>
 
