@@ -19,7 +19,7 @@
       --text-primary: #FFFFFF;
       --text-secondary: #9EA1A8;
       --text-black: #000000;
-      --gradient-user: linear-gradient(to top, #002366 0%, #000000 100%);
+      --gradient-user: linear-gradient(135deg, #FF0080 0%, #007CF0 100%);
       --gradient-bot: #2F3136;
       --gradient-sidebar: linear-gradient(to top, #002366 0%, #000000 100%);
       --accent-professional: #4A9EFF;
@@ -241,7 +241,7 @@
     .importance-bar-wrap {
       width: 60px;
       height: 4px;
-      background: var(--border-glass);
+      background: #1A1A1A;
       border-radius: 2px;
       overflow: hidden;
       flex-shrink: 0;
@@ -606,13 +606,21 @@
       const conceptsStr = memDetails.map(m => m.concept).join(", ");
       const conceptRows = memDetails.map(m => {
         const impPct = Math.round(m.importance * 100);
-        const barColor = impPct >= 65 ? "var(--ok)" : impPct >= 35 ? "var(--mid)" : "var(--warn)";
+        // Traffic-light frequency colors
+        let freqColor;
+        if (m.frequency === 1) {
+          freqColor = "#FF4B2B"; // Red
+        } else if (m.frequency === 2) {
+          freqColor = "#FFD200"; // Yellow/Amber
+        } else {
+          freqColor = "#00C851"; // Green for 3+
+        }
         return `
           <div class="concept-row">
             <span class="concept-name">${m.concept}</span>
             <span style="color:var(--muted)">${m.frequency}</span>
             <div class="importance-bar-wrap">
-              <div class="importance-bar" style="width:${impPct}%;background:${barColor}"></div>
+              <div class="importance-bar" style="width:${impPct}%;background:${freqColor}"></div>
             </div>
             <span style="font-weight:600;font-size:0.68rem">${m.importance}</span>
             <span class="action-badge badge-${m.action}">${m.action}</span>
