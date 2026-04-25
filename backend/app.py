@@ -15,14 +15,21 @@ from backend.consolidator import consolidate
 
 load_dotenv()
 
-app = Flask(__name__, static_folder="../frontend/dist", static_url_path="")
-# Configure CORS dynamically
-frontend_url = os.getenv("FRONTEND_URL", "https://rl-based-dual-phase-memory-consolidation-system-oszu7eilt.vercel.app/")
-allowed_origins = [frontend_url, "http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000"]
+# Use absolute paths to avoid "Folder Not Found" errors on Linux/Render
+current_dir = os.path.dirname(os.path.abspath(__file__))
+static_folder = os.path.join(current_dir, "../frontend/dist")
 
+app = Flask(__name__, static_folder=static_folder, static_url_path="")
+
+# Robust CORS Configuration
+# This allows the specific Vercel domain and local dev servers to talk to your backend
 CORS(app, resources={
     r"/*": {
-        "origins": allowed_origins,
+        "origins": [
+            "https://rl-based-dual-phase-memory-consolidation-system.vercel.app",
+            "http://localhost:3000",
+            "http://localhost:5173"
+        ],
         "methods": ["GET", "POST", "OPTIONS"],
         "allow_headers": ["Content-Type", "Authorization"]
     }
@@ -98,7 +105,9 @@ def index():
 
 @app.route("/chat", methods=["POST", "OPTIONS"])
 def chat():
+    print("Request received at /chat")
     if request.method == "OPTIONS":
+        print("OPTIONS request received")
         return "", 200
     global conversation_history
 

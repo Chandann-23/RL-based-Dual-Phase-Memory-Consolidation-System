@@ -374,9 +374,11 @@
 <script type="module">
   /**
    * API Configuration
-   * Since the frontend is served by the backend, we use relative paths.
+   * Use environment variable for production, fallback to localhost for development
    */
-  const API = ""; 
+  const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:10000";
+  // Remove trailing slash to prevent double slashes
+  const API = API_BASE.replace(/\/$/, "");
 
   document.getElementById("userInput").addEventListener("keydown", e => {
     if (e.key === "Enter") sendMessage();
