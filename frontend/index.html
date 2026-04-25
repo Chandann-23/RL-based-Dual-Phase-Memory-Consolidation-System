@@ -395,6 +395,8 @@
     input.value = "";
 
     appendMessage("user", text);
+    
+    console.log("Requesting backend at:", API);
 
     try {
       const res = await fetch(`${API}/chat`, {

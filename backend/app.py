@@ -21,8 +21,8 @@ static_folder = os.path.join(current_dir, "../frontend/dist")
 
 app = Flask(__name__, static_folder=static_folder, static_url_path="")
 
-# Robust CORS Configuration
-# This allows the specific Vercel domain and local dev servers to talk to your backend
+# Robust CORS Configuration for Distributed System
+# Explicitly allows Vercel frontend to communicate with Render backend
 CORS(app, resources={
     r"/*": {
         "origins": [
