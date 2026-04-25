@@ -7,17 +7,19 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
   <style>
     :root {
-      /* Professional Dark Color Palette */
-      --bg-main: #0D011C;
-      --bg-gradient: linear-gradient(180deg, #0D011C 0%, #1E1030 100%);
-      --bg-surface: rgba(255, 255, 255, 0.08);
-      --bg-component: rgba(255, 255, 255, 0.05);
-      --border-glass: rgba(255, 255, 255, 0.15);
+      /* Professional Developer Tool Color Palette */
+      --bg-main: #0D1117;
+      --bg-gradient: linear-gradient(180deg, #0D1117 0%, #161A22 100%);
+      --bg-chat-panel: #0A0D14;
+      --bg-surface: rgba(255, 255, 255, 0.06);
+      --bg-component: rgba(255, 255, 255, 0.04);
+      --border-glass: rgba(255, 255, 255, 0.12);
+      --border-slate: #4A5568;
       --text-primary: #E4E6EB;
       --text-secondary: #9EA1A8;
-      --text-black: #1a1a1a;
-      --gradient-user: linear-gradient(135deg, #320A50 0%, #1A052A 100%);
-      --gradient-bot: #FFFFFF;
+      --text-black: #000000;
+      --gradient-user: linear-gradient(135deg, #2D3250 0%, #1A1D3A 100%);
+      --gradient-bot: #F5F5F7;
       --accent-professional: #4A9EFF;
       --accent-muted: #5A6B7B;
       --importance-high: #6B7F7B;
@@ -84,8 +86,8 @@
       border-right: 1px solid var(--border-glass);
       min-height: 0;
       overflow: hidden;
-      background: var(--bg-surface);
-      backdrop-filter: blur(10px);
+      background: var(--bg-chat-panel);
+      backdrop-filter: blur(8px);
       border-radius: 12px;
       margin: 12px;
       padding: 16px;
@@ -186,7 +188,7 @@
     }
 
     .concept-row:last-child { border-bottom: none; }
-    .concept-name { color: var(--accent-professional); font-weight: 500; min-width: 60px; font-family: var(--sans); }
+    .concept-name { color: var(--accent-professional); font-weight: 500; min-width: 60px; font-family: var(--mono); }
 
     .importance-bar-wrap {
       width: 60px;
@@ -204,12 +206,14 @@
 
     .action-badge {
       display: inline-block;
-      padding: 2px 8px;
-      border-radius: 12px;
-      font-size: 0.6rem;
-      font-weight: 500;
-      letter-spacing: 0.3px;
+      padding: 2px 6px;
+      border-radius: 2px;
+      font-size: 0.55rem;
+      font-weight: 400;
+      font-family: var(--mono);
+      letter-spacing: 0.5px;
       flex-shrink: 0;
+      text-transform: uppercase;
     }
 
     .badge-STORE     { background: rgba(107, 127, 123, 0.2); color: var(--importance-high); border: 1px solid rgba(107, 127, 123, 0.3); }
@@ -221,33 +225,30 @@
 
     /* ── Input ── */
     .input-area {
-      padding: 16px 20px;
+      padding: 12px 16px;
       border-top: 1px solid var(--border-glass);
       display: flex;
-      gap: 12px;
-      background: var(--bg-surface);
-      backdrop-filter: blur(10px);
+      gap: 8px;
+      background: transparent;
       flex-shrink: 0;
-      border-radius: 12px;
       margin: 0 12px 12px 12px;
     }
 
     .input-area input {
       flex: 1;
-      background: var(--bg-component);
-      border: 1px solid var(--border-glass);
-      border-radius: 8px;
-      padding: 12px 16px;
+      background: transparent;
+      border: 1px solid var(--border-slate);
+      border-radius: 4px;
+      padding: 8px 12px;
       color: var(--text-primary);
-      font-family: var(--sans);
-      font-size: 0.88rem;
+      font-family: var(--mono);
+      font-size: 0.85rem;
       outline: none;
-      transition: all 0.15s ease;
+      transition: border-color 0.15s ease;
     }
 
     .input-area input:focus { 
       border-color: var(--accent-professional);
-      background: rgba(255, 255, 255, 0.08);
     }
 
     .input-area input::placeholder {
@@ -255,22 +256,24 @@
     }
 
     .input-area button {
-      background: var(--bg-component);
+      background: transparent;
       color: var(--accent-professional);
-      border: 1px solid var(--border-glass);
-      border-radius: 8px;
-      padding: 12px 16px;
-      font-family: var(--sans);
-      font-weight: 500;
+      border: 1px solid var(--accent-professional);
+      border-radius: 4px;
+      padding: 8px 12px;
+      font-family: var(--mono);
+      font-weight: 400;
+      font-size: 0.75rem;
       cursor: pointer;
       transition: all 0.15s ease;
       flex-shrink: 0;
-      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
     .input-area button:hover { 
-      background: rgba(255, 255, 255, 0.12);
-      border-color: var(--accent-professional);
+      background: var(--accent-professional);
+      color: var(--text-primary);
     }
 
     /* ── Sidebar ── */
@@ -318,14 +321,14 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 8px 0;
+      padding: 6px 0;
       border-bottom: 1px solid var(--border-glass);
-      font-family: var(--sans);
-      font-size: 0.72rem;
+      font-family: var(--mono);
+      font-size: 0.68rem;
     }
 
     .mem-item:last-child { border: none; }
-    .mem-key { color: var(--accent-professional); font-weight: 500; font-family: var(--sans); }
+    .mem-key { color: var(--accent-professional); font-weight: 500; font-family: var(--mono); }
     .mem-val { color: var(--text-secondary); font-family: var(--mono); }
 
     .sidebar-log {
