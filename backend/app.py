@@ -26,6 +26,7 @@ app = Flask(__name__, static_folder=static_folder, static_url_path="")
 CORS(app, resources={
     r"/*": {
         "origins": [
+            "https://rl-based-dual-phase-memory-consolid.vercel.app",
             "https://rl-based-dual-phase-memory-consolidation-system.vercel.app",
             "http://localhost:3000",
             "http://localhost:5173"
@@ -37,8 +38,10 @@ CORS(app, resources={
 
 # Initialize Groq Client
 # Note: Never hardcode your API key. Use environment variables.
-client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
-GROQ_MODEL = "llama-3.2-3b-preview"
+if not os.environ.get('GROQ_API_KEY'):
+    print('CRITICAL: GROQ_API_KEY is missing from environment')
+client = Groq(api_key=os.environ.get('GROQ_API_KEY'))
+GROQ_MODEL = "llama3-8b-8192"
 
 memory = MemoryStore()
 agent = QLearningAgent()
@@ -89,7 +92,7 @@ History:
             return f"Based on our conversation — {history[-1]['bot']}"
         return "I'm having trouble connecting to my brain right now. Please try again in a moment."
     except Exception as e:
-        print(f"Unexpected error: {e}")
+        app.logger.error(f'LLM Failure: {str(e)}')
         if history:
             return f"Based on our conversation — {history[-1]['bot']}"
         if relevant:
