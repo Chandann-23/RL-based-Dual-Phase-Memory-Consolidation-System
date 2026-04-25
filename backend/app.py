@@ -13,7 +13,9 @@ from backend.rl_environment import MemoryEnv
 from backend.rl_agent import QLearningAgent
 from backend.consolidator import consolidate
 
-load_dotenv()
+# Environment handling: load_dotenv() only in development
+if os.environ.get('FLASK_ENV') == 'development':
+    load_dotenv()
 
 # Use absolute paths to avoid "Folder Not Found" errors on Linux/Render
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -37,11 +39,25 @@ CORS(app, resources={
 })
 
 # Initialize Groq Client
-# Note: Never hardcode your API key. Use environment variables.
-if not os.environ.get('GROQ_API_KEY'):
-    print('CRITICAL: GROQ_API_KEY is missing from environment')
-client = Groq(api_key=os.environ.get('GROQ_API_KEY'))
+# Note: API key will be injected via Render Dashboard
+GROQ_API_KEY = os.getenv('GROQ_API_KEY')
+print(f"DEBUG: GROQ_API_KEY found: {bool(GROQ_API_KEY)}")
+if not GROQ_API_KEY:
+    print('ERROR: GROQ_API_KEY not found in environment variables')
+    print('Please set GROQ_API_KEY in Render Dashboard or local .env file')
+else:
+    print(f"DEBUG: GROQ_API_KEY length: {len(GROQ_API_KEY)}")
+    print(f"DEBUG: GROQ_API_KEY starts with: {GROQ_API_KEY[:10]}...")
+
+try:
+    client = Groq(api_key=GROQ_API_KEY)
+    print("DEBUG: Groq client initialized successfully")
+except Exception as e:
+    print(f"ERROR: Failed to initialize Groq client: {e}")
+    client = None
+
 GROQ_MODEL = "llama3-8b-8192"
+print(f"DEBUG: Using model: {GROQ_MODEL}")
 
 memory = MemoryStore()
 agent = QLearningAgent()
@@ -54,6 +70,15 @@ CONSOLIDATE_EVERY = 3
 
 def generate_response(user_input: str, relevant: list, history: list) -> str:
     """LLM-powered response using Groq Cloud with memory context and history."""
+    
+    print(f"DEBUG: generate_response called with input: '{user_input[:50]}...'")
+    print(f"DEBUG: relevant concepts: {len(relevant) if relevant else 0}")
+    print(f"DEBUG: history length: {len(history) if history else 0}")
+    print(f"DEBUG: client exists: {bool(client)}")
+    
+    if not client:
+        print("ERROR: Groq client not initialized")
+        return "I'm having trouble with my brain connection. Please try again."
 
     if relevant:
         memory_context = "\n".join(
@@ -72,6 +97,8 @@ Memory: {memory_context}
 History:
 {history_str}"""
 
+    print(f"DEBUG: About to call Groq API with model: {GROQ_MODEL}")
+    
     try:
         completion = client.chat.completions.create(
             model=GROQ_MODEL,
@@ -84,21 +111,23 @@ History:
             top_p=0.8,
             stream=False
         )
-        return completion.choices[0].message.content.strip()
+        response = completion.choices[0].message.content.strip()
+        print(f"DEBUG: Groq API success, response: '{response[:50]}...'")
+        return response
 
     except APIStatusError as e:
-        print(f"Groq API Error: {e.status_code} - {e.message}")
+        print(f"DEBUG: Groq API Status Error: {e.status_code} - {e.message}")
         if history:
             return f"Based on our conversation — {history[-1]['bot']}"
         return "I'm having trouble connecting to my brain right now. Please try again in a moment."
     except Exception as e:
-        app.logger.error(f'LLM Failure: {str(e)}')
-        if history:
-            return f"Based on our conversation — {history[-1]['bot']}"
+        print(f"DEBUG: General Groq Error: {type(e).__name__}: {e}")
+        print(f"DEBUG: Error details: {str(e)}")
+        # Intelligent fallback using memory context
         if relevant:
-            concepts = ", ".join(r["concept"] for r in relevant[:4])
-            return f"I remember: {concepts}. What do you need help with?"
-        return "I'm processing what you said. Keep going!"
+            top_concept = relevant[0]['concept']
+            return f"I remember your point about {top_concept}, but I am having trouble connecting to my response engine right now."
+        return "I've noted what you said, but I'm having trouble generating a response right now."
 
 
 @app.route("/")
