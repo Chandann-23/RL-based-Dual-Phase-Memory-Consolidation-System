@@ -41,15 +41,20 @@
       background: var(--bg-gradient);
       color: var(--text-primary);
       font-family: var(--sans);
-      display: grid;
-      grid-template-columns: 1fr 320px;
-      grid-template-rows: 100px 1fr;
+      display: flex;
+      flex-direction: column;
       height: 100vh;
+    }
+
+    .main-container {
+      display: flex;
+      flex-direction: row;
+      flex: 1;
+      overflow: hidden;
     }
 
     /* ── Header ── */
     header {
-      grid-column: 1 / -1;
       padding: 24px;
       border-bottom: 1px solid var(--border-glass);
       display: flex;
@@ -132,6 +137,8 @@
       border-radius: 12px;
       margin: 12px;
       padding: 16px;
+      width: 70%;
+      flex-shrink: 0;
     }
 
     .messages {
@@ -329,7 +336,8 @@
       margin: 12px 12px 12px 0;
       padding: 16px;
       color: var(--text-primary);
-      transition: transform 0.3s ease;
+      width: 30%;
+      flex-shrink: 0;
     }
 
     .sidebar-top {
@@ -425,9 +433,8 @@
 
     /* ── Mobile Responsive ── */
     @media (max-width: 768px) {
-      body {
-        grid-template-columns: 1fr;
-        grid-template-rows: 100px 1fr;
+      .main-container {
+        flex-direction: column;
       }
 
       header h2 {
@@ -446,6 +453,7 @@
         border-right: none;
         margin: 12px;
         border-radius: 12px;
+        width: 100%;
       }
 
       .sidebar {
@@ -459,6 +467,7 @@
         border-left: 1px solid var(--border-glass);
         transform: translateX(100%);
         z-index: 1000;
+        transition: transform 0.3s ease;
       }
 
       .sidebar.open {
@@ -499,37 +508,40 @@
   </div>
 </header>
 
-<!-- Chat Panel -->
-<div class="chat-panel">
-  <div class="messages" id="messages">
-    <div class="msg bot">
-      <div class="bubble">Hey! Talk to me — I'll remember what matters using reinforcement learning. 🧠</div>
+<!-- Main Container -->
+<div class="main-container">
+  <!-- Chat Panel -->
+  <div class="chat-panel">
+    <div class="messages" id="messages">
+      <div class="msg bot">
+        <div class="bubble">Hey! Talk to me — I'll remember what matters using reinforcement learning. 🧠</div>
+      </div>
+    </div>
+    <div class="input-area">
+      <input type="text" id="userInput" placeholder="Type something..." />
+      <button onclick="sendMessage()">Send</button>
     </div>
   </div>
-  <div class="input-area">
-    <input type="text" id="userInput" placeholder="Type something..." />
-    <button onclick="sendMessage()">Send</button>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-top">
+      <h3>📌 Persistent Memory</h3>
+      <div class="persistent-scroll">
+        <div id="persistentMemory"><p class="empty-state">Nothing stored yet.</p></div>
+      </div>
+    </div>
+    <div class="sidebar-log">
+      <h3>⚡ Consolidation Log</h3>
+      <div class="log-scroll" id="consolidationLog">
+        <p class="empty-state">Runs every 3 interactions.</p>
+      </div>
+    </div>
   </div>
 </div>
 
-<!-- Sidebar Overlay -->
+<!-- Sidebar Overlay (for mobile) -->
 <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
-
-<!-- Sidebar -->
-<div class="sidebar">
-  <div class="sidebar-top">
-    <h3>📌 Persistent Memory</h3>
-    <div class="persistent-scroll">
-      <div id="persistentMemory"><p class="empty-state">Nothing stored yet.</p></div>
-    </div>
-  </div>
-  <div class="sidebar-log">
-    <h3>⚡ Consolidation Log</h3>
-    <div class="log-scroll" id="consolidationLog">
-      <p class="empty-state">Runs every 3 interactions.</p>
-    </div>
-  </div>
-</div>
 
 <script type="module">
   /**
