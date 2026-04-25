@@ -3,6 +3,7 @@ from flask_cors import CORS
 import requests as http_requests
 import numpy as np
 import os
+import traceback
 from dotenv import load_dotenv
 from groq import Groq, APIStatusError
 
@@ -13,18 +14,18 @@ from backend.rl_environment import MemoryEnv
 from backend.rl_agent import QLearningAgent
 from backend.consolidator import consolidate
 
-# Environment handling: load_dotenv() only in development
-if os.environ.get('FLASK_ENV') == 'development':
+# 1. Environment handling: Only load .env if not in production
+if os.environ.get('FLASK_ENV') != 'production':
     load_dotenv()
 
-# Use absolute paths to avoid "Folder Not Found" errors on Linux/Render
+# 2. Path Handling for Render
 current_dir = os.path.dirname(os.path.abspath(__file__))
-static_folder = os.path.join(current_dir, "../frontend/dist")
+static_folder = os.path.normpath(os.path.join(current_dir, "../frontend/dist"))
 
 app = Flask(__name__, static_folder=static_folder, static_url_path="")
 
-# Robust CORS Configuration for Distributed System
-# Explicitly allows Vercel frontend to communicate with Render backend
+# 3. Robust CORS for Distributed Systems
+# This allows your specific Vercel app AND local development
 CORS(app, resources={
     r"/*": {
         "origins": [
@@ -38,67 +39,39 @@ CORS(app, resources={
     }
 })
 
-# Initialize Groq Client
-# Note: API key will be injected via Render Dashboard
+# 4. Groq Client Initialization with Debugging
 GROQ_API_KEY = os.getenv('GROQ_API_KEY')
-print(f"DEBUG: GROQ_API_KEY found: {bool(GROQ_API_KEY)}")
-if not GROQ_API_KEY:
-    print('ERROR: GROQ_API_KEY not found in environment variables')
-    print('Please set GROQ_API_KEY in Render Dashboard or local .env file')
+GROQ_MODEL = "llama3-8b-8192" 
+
+client = None
+if GROQ_API_KEY:
+    try:
+        client = Groq(api_key=GROQ_API_KEY)
+        print("DEBUG: Groq client initialized.")
+    except Exception as e:
+        print(f"ERROR: Groq init failed: {e}")
 else:
-    print(f"DEBUG: GROQ_API_KEY length: {len(GROQ_API_KEY)}")
-    print(f"DEBUG: GROQ_API_KEY starts with: {GROQ_API_KEY[:10]}...")
+    print("CRITICAL: No GROQ_API_KEY found in environment variables!")
 
-try:
-    client = Groq(api_key=GROQ_API_KEY)
-    print("DEBUG: Groq client initialized successfully")
-except Exception as e:
-    print(f"ERROR: Failed to initialize Groq client: {e}")
-    client = None
-
-GROQ_MODEL = "llama3-8b-8192"
-print(f"DEBUG: Using model: {GROQ_MODEL}")
-
+# Global Logic Objects
 memory = MemoryStore()
 agent = QLearningAgent()
 env = MemoryEnv()
 conversation_history = []
 MAX_HISTORY = 4
-
 CONSOLIDATE_EVERY = 3
 
-
 def generate_response(user_input: str, relevant: list, history: list) -> str:
-    """LLM-powered response using Groq Cloud with memory context and history."""
-    
-    print(f"DEBUG: generate_response called with input: '{user_input[:50]}...'")
-    print(f"DEBUG: relevant concepts: {len(relevant) if relevant else 0}")
-    print(f"DEBUG: history length: {len(history) if history else 0}")
-    print(f"DEBUG: client exists: {bool(client)}")
-    
+    """LLM-powered response with fallback logic."""
     if not client:
-        print("ERROR: Groq client not initialized")
-        return "I'm having trouble with my brain connection. Please try again."
+        return "System logic is active, but the LLM brain is not initialized. Check API keys."
 
-    if relevant:
-        memory_context = "\n".join(
-            f"- {r['concept']} x{r['frequency']}" for r in relevant[:4]
-        )
-    else:
-        memory_context = "none"
+    # Build Context
+    memory_context = "\n".join(f"- {r['concept']}" for r in relevant[:4]) if relevant else "None"
+    history_str = "".join([f"U: {h['user']}\nA: {h['bot']}\n" for h in history[-MAX_HISTORY:]])
 
-    history_str = ""
-    for h in history[-MAX_HISTORY:]:
-        history_str += f"U: {h['user'][:80]}\nA: {h['bot'][:80]}\n"
+    system_prompt = f"You are a memory-aware assistant. Use these facts: {memory_context}. History: {history_str}"
 
-    system_prompt = f"""You are a memory-aware assistant. Answer using ONLY the facts below. Be concise.
-
-Memory: {memory_context}
-History:
-{history_str}"""
-
-    print(f"DEBUG: About to call Groq API with model: {GROQ_MODEL}")
-    
     try:
         completion = client.chat.completions.create(
             model=GROQ_MODEL,
@@ -107,65 +80,46 @@ History:
                 {"role": "user", "content": user_input}
             ],
             temperature=0.2,
-            max_tokens=100,
-            top_p=0.8,
-            stream=False
+            max_tokens=150
         )
-        response = completion.choices[0].message.content.strip()
-        print(f"DEBUG: Groq API success, response: '{response[:50]}...'")
-        return response
-
-    except APIStatusError as e:
-        print(f"DEBUG: Groq API Status Error: {e.status_code} - {e.message}")
-        if history:
-            return f"Based on our conversation — {history[-1]['bot']}"
-        return "I'm having trouble connecting to my brain right now. Please try again in a moment."
+        return completion.choices[0].message.content.strip()
     except Exception as e:
-        print(f"DEBUG: General Groq Error: {type(e).__name__}: {e}")
-        print(f"DEBUG: Error details: {str(e)}")
-        # Intelligent fallback using memory context
-        if relevant:
-            top_concept = relevant[0]['concept']
-            return f"I remember your point about {top_concept}, but I am having trouble connecting to my response engine right now."
-        return "I've noted what you said, but I'm having trouble generating a response right now."
-
+        print(f"LLM Error: {e}")
+        # Safe Fallback: Check if relevant exists before indexing
+        if relevant and len(relevant) > 0:
+            return f"I've noted that. I'm focusing on your mention of '{relevant[0]['concept']}'."
+        return "I've processed your message and updated my RL memory model."
 
 @app.route("/")
 def index():
     return send_from_directory(app.static_folder, "index.html")
 
-
 @app.route("/chat", methods=["POST", "OPTIONS"])
 def chat():
-    print("Request received at /chat")
     if request.method == "OPTIONS":
-        print("OPTIONS request received")
         return "", 200
+    
     global conversation_history
-
     data = request.json
     user_input = data.get("message", "").strip()
+    
     if not user_input:
         return jsonify({"error": "Empty message"}), 400
 
-    # 1. Extract concepts
+    # RL Logic Pipeline
     concepts = extract_concepts(user_input)
     memory.update(concepts)
-
-    # 2. Search memory for relevant context
     relevant = memory.search_memory(user_input)
-
-    # 3. Generate response via LLaMA with history
+    
+    # LLM Step
     response = generate_response(user_input, relevant, conversation_history)
-
-    # 4. Store in conversation history
     conversation_history.append({"user": user_input, "bot": response})
 
-    # 5. Compute importance + run RL agent for all working memory units
+    # RL Agent Learning Step
     units = memory.all_working()
     max_freq = max((u["frequency"] for u in units), default=1)
-
     memory_details = []
+
     for unit in units:
         importance = compute_importance(unit, max_freq)
         freq_norm = unit["frequency"] / max_freq
@@ -177,19 +131,14 @@ def chat():
         _, reward, _, _, _ = env.step(action)
         agent.learn(state, action, reward, state)
 
-        action_name = env.action_name(action)
-        reasons = build_reasons(unit, importance, action)
-
         memory_details.append({
             "concept": unit["concept"],
             "frequency": unit["frequency"],
-            "recency": round(recency, 3),
             "importance": importance,
-            "action": action_name,
-            "reasons": reasons,
+            "action": env.action_name(action),
+            "reasons": build_reasons(unit, importance, action),
         })
 
-    # 6. Periodic consolidation every N interactions
     consolidation_log = []
     if memory.interaction_count % CONSOLIDATE_EVERY == 0:
         consolidation_log = consolidate(memory, agent)
@@ -202,25 +151,7 @@ def chat():
         "persistent_memory": memory.all_persistent(),
     })
 
-
-@app.route("/reset", methods=["POST"])
-def reset():
-    global memory, agent, conversation_history
-    memory = MemoryStore()
-    agent = QLearningAgent()
-    conversation_history = []
-    return jsonify({"status": "reset"})
-
-
-@app.route("/memory", methods=["GET"])
-def get_memory():
-    units = memory.all_working()
-    max_freq = max((u["frequency"] for u in units), default=1)
-    enriched = []
-    for u in units:
-        imp = compute_importance(u, max_freq)
-        enriched.append({**u, "importance": imp})
-    return jsonify({
-        "working": enriched,
-        "persistent": memory.all_persistent(),
-    })
+# Main entry point for Render
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
