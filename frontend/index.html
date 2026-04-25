@@ -4,22 +4,24 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>RL Memory System</title>
+  <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/2103/2103633.png" type="image/png">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
   <style>
     :root {
-      /* Professional Developer Tool Color Palette */
-      --bg-main: #0D1117;
-      --bg-gradient: linear-gradient(180deg, #0D1117 0%, #161A22 100%);
-      --bg-chat-panel: #0A0D14;
+      /* Command Center Color Palette */
+      --bg-main: #000000;
+      --bg-gradient: linear-gradient(180deg, #000000 0%, #000000 100%);
+      --bg-chat-panel: #000000;
       --bg-surface: rgba(255, 255, 255, 0.06);
       --bg-component: rgba(255, 255, 255, 0.04);
-      --border-glass: rgba(255, 255, 255, 0.12);
+      --border-glass: #333;
       --border-slate: #4A5568;
-      --text-primary: #E4E6EB;
+      --text-primary: #FFFFFF;
       --text-secondary: #9EA1A8;
       --text-black: #000000;
-      --gradient-user: linear-gradient(135deg, #2D3250 0%, #1A1D3A 100%);
-      --gradient-bot: #F5F5F7;
+      --gradient-user: linear-gradient(to top, #002366 0%, #000000 100%);
+      --gradient-bot: #2F3136;
+      --gradient-sidebar: linear-gradient(to top, #002366 0%, #000000 100%);
       --accent-professional: #4A9EFF;
       --accent-muted: #5A6B7B;
       --importance-high: #6B7F7B;
@@ -41,43 +43,42 @@
       font-family: var(--sans);
       display: grid;
       grid-template-columns: 1fr 320px;
-      grid-template-rows: 56px 1fr;
+      grid-template-rows: 100px 1fr;
       height: 100vh;
     }
 
     /* ── Header ── */
     header {
       grid-column: 1 / -1;
-      padding: 0 24px;
+      padding: 24px;
       border-bottom: 1px solid var(--border-glass);
       display: flex;
+      flex-direction: column;
       align-items: center;
-      justify-content: space-between;
+      justify-content: center;
       background: var(--bg-surface);
-      backdrop-filter: blur(10px);
-      border-radius: 0;
-      height: 56px;
+      backdrop-filter: blur(8px);
+      height: 100px;
       flex-shrink: 0;
     }
 
-    header h1 {
-      font-size: 1.1rem;
+    header h2 {
+      font-size: 1.8rem;
       font-weight: 600;
-      letter-spacing: -0.3px;
-      color: var(--text-secondary);
+      color: var(--text-primary);
+      margin-bottom: 8px;
+      text-align: center;
     }
 
-    header h1 span { color: var(--accent-professional); }
-
-    .agent-stats {
-      display: flex;
-      gap: 16px;
-      font-family: var(--mono);
-      font-size: 0.7rem;
-      color: var(--text-secondary);
+    header .description {
+      font-size: 0.9rem;
+      font-weight: 500;
+      background: linear-gradient(90deg, #FF69B4 0%, #4A9EFF 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-align: center;
     }
-
-    .agent-stats b { color: var(--accent-professional); }
 
     /* ── Chat Panel ── */
     .chat-panel {
@@ -86,7 +87,7 @@
       border-right: 1px solid var(--border-glass);
       min-height: 0;
       overflow: hidden;
-      background: linear-gradient(135deg, #3432c7 0%, #3432c7 100%);
+      background: var(--bg-chat-panel);
       backdrop-filter: blur(8px);
       border-radius: 12px;
       margin: 12px;
@@ -130,7 +131,7 @@
 
     .msg.bot .bubble {
       background: var(--gradient-bot);
-      color: var(--text-black);
+      color: var(--text-primary);
       border: 1px solid var(--border-glass);
       border-bottom-left-radius: 4px;
     }
@@ -278,8 +279,8 @@
 
     /* ── Sidebar ── */
     .sidebar {
-      background: var(--bg-surface);
-      backdrop-filter: blur(10px);
+      background: var(--gradient-sidebar);
+      backdrop-filter: blur(8px);
       display: flex;
       flex-direction: column;
       min-height: 0;
@@ -287,6 +288,7 @@
       border-radius: 12px;
       margin: 12px 12px 12px 0;
       padding: 16px;
+      color: var(--text-primary);
     }
 
     .sidebar-top {
@@ -298,11 +300,24 @@
       backdrop-filter: blur(10px);
     }
 
+    .agent-stats {
+      display: flex;
+      gap: 16px;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--text-primary);
+      margin-bottom: 16px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border-glass);
+    }
+
+    .agent-stats b { color: var(--accent-professional); }
+
     .sidebar-top h3 {
       font-size: 0.65rem;
       text-transform: uppercase;
       letter-spacing: 1.2px;
-      color: var(--text-secondary);
+      color: var(--text-primary);
       margin-bottom: 12px;
       font-weight: 500;
       font-family: var(--sans);
@@ -343,7 +358,7 @@
       font-size: 0.65rem;
       text-transform: uppercase;
       letter-spacing: 1.2px;
-      color: var(--text-secondary);
+      color: var(--text-primary);
       padding: 16px 16px 8px;
       flex-shrink: 0;
       font-weight: 500;
@@ -384,12 +399,8 @@
 <body>
 
 <header>
-  <h1>🧠 RL <span>Memory</span> System</h1>
-  <div class="agent-stats" id="agentStats">
-    <span>Steps: <b>0</b></span>
-    <span>ε: <b>0.300</b></span>
-    <span>Avg Reward: <b>—</b></span>
-  </div>
+  <h2>RL Memory System</h2>
+  <div class="description">RL-Driven Dual-Phase Memory Engine</div>
 </header>
 
 <!-- Chat Panel -->
@@ -408,6 +419,11 @@
 <!-- Sidebar -->
 <div class="sidebar">
   <div class="sidebar-top">
+    <div class="agent-stats" id="agentStats">
+      <span>Steps: <b>0</b></span>
+      <span>ε: <b>0.300</b></span>
+      <span>Avg Reward: <b>—</b></span>
+    </div>
     <h3>📌 Persistent Memory</h3>
     <div class="persistent-scroll">
       <div id="persistentMemory"><p class="empty-state">Nothing stored yet.</p></div>
